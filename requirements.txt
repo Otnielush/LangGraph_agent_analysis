@@ -1,0 +1,13 @@
+numpy==2.2.0
+opencv-python==4.12.0.88
+airsim==1.8.1
+ollama
+requests
+pillow
+transformers
+accelerate
+torch
+dronekit
+pymavlink
+msgpack-rpc-python
+wheel
