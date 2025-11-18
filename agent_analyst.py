@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from bq_client import BigQueryRunner
 
 
-VERBOSE = 1
+VERBOSE = 0
 
 
 load_dotenv(".env")
@@ -65,14 +65,14 @@ You database with all information you need about product sales, you can use tool
 
 
         graph.add_node("sql", create_sql_node(self.llm))
-        # graph.add_node("pandas", create_pandas_node(self.llm))
+        graph.add_node("pandas", create_pandas_node(self.llm))
 
 
         graph.add_edge(START, "chat")
         graph.add_edge("chat", END)
         graph.add_edge("sql", END)
         # graph.add_edge("sql", "pandas")
-        # graph.add_edge("pandas", END)
+        graph.add_edge("pandas", END)
         graph.add_conditional_edges("chat", cond_chat_to_database, ["sql", "pandas", END])
         return graph.compile()
 
@@ -129,7 +129,8 @@ LIMIT 10;
 - Then call tool "query_database" and pass sql query.
 - After receiving result from tool, you must observe them and decide is it was successful or not.
 - If results not good you should fix sql query, simplify logic in query and call tool again.
-- When you finished to query database write done. Do not write answer.
+- Repeat calling tool till you get good data to task
+- When you finished to query database write done.
 """), HumanMessage(tasks)]
 
         calls_msgs = []
@@ -142,15 +143,17 @@ LIMIT 10;
             if len(output.tool_calls) > 0 and max_tries > 0:
                 calls_msgs.insert(0, output)
                 for tool_call in output.tool_calls:
-                    print("= = = = = sql_node:", output.content, "\n\n", tool_call)
+                    if VERBOSE > 0:
+                        print("= = = = = sql_node:", output.content, "\n\n", tool_call)
                     data = query_database.invoke(tool_call["args"])
-                    print("\n", data, "\n")
+                    if VERBOSE > 0:
+                        print("\n", data, "\n")
                     if isinstance(data, pd.DataFrame):
                         observation = f"data:\n{data}"
                     else:
                         observation = data
                     calls_msgs.insert(1, ToolMessage(content=observation, tool_call_id=tool_call["id"]))
-                    calls_msgs = calls_msgs[:2]
+                    calls_msgs = calls_msgs[:4]
             else:
                 calling_tools = False
 
