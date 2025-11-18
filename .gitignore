@@ -36,6 +36,7 @@ htmlcov/
 *.local
 
 tmp*/
+creds/*
 
 # torch saves
 *.pt
